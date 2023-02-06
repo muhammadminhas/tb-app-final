@@ -1,113 +1,186 @@
-import React from 'react'
-import {useState,useEffect} from 'react';
-import Popup from '../Components/Popup';
+import React from "react";
+import { useState, useEffect } from "react";
+import Popup from "../Components/Popup";
+import updateStatus from "../services/data";
+import axios from "axios";
 export default function AdminNotifications(props) {
-  const [username,setUsername] = useState([]);
-  const [filename,setFilename] = useState([]);
-  const [buttonPopup,setButtonPopup] = useState(false);
-  const [newimportdata,setNewimportdata] = useState([]);
-  const [notifications,setNotifications] = useState([]);
-  function onclickaccept(){
- var btn=document.getElementById("acceptbtn");
- var id=document.getElementById("iddd");
- id.Text();
- console.log(this.innerText());
+  const [username, setUsername] = useState([]);
+  const [filename, setFilename] = useState([]);
+  const [id, setId] = useState([]);
+  const [acceptedData, setAcceptedData] = useState([]);
+  const [buttonPopup, setButtonPopup] = useState(false);
+  const [newimportdata, setNewimportdata] = useState([]);
+  const [refresh, setRefresh] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  function onclickaccept() {
+    var btn = document.getElementById("acceptbtn");
+    var id = document.getElementById("iddd");
+    id.Text();
+    console.log(this.innerText());
+  }
+  function InsertData(body) {
+    return fetch(`http://localhost:5000/adminadddata`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((response) => response.json())
+      .catch((error) => console.log(error));
+  }
+  function GetAndInsert(body) {
+    return fetch(`http://localhost:5000/get_and_insert_data`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    })
+      .then((response) => response.json())
+      .catch((error) => console.log(error));
   }
 
- function viewclick(e){
-setButtonPopup(true)
-  console.log(e)
-  setUsername(notifications[e].username)
-  console.log(notifications[e].username)
-  setFilename(notifications[e].filename)
-  console.log(notifications[e].filename)
-}
+  async function accept(id, username, filename) {
+    const data = {
+      id: id,
+      username: username,
+      filename: filename,
+    };
 
-  useEffect(()=>{
-      fetch('http://localhost:5000/getnewimports',{
-        'method' : 'GET',
-        headers:{
-          'Content-Type' : 'application/json'
-        }
-      })
-      .then(resp => resp.json())
-      .then(resp => setNewimportdata(resp),
-      console.log(newimportdata)
+    const response = await GetAndInsert(data);
+    alert("Data has been Accepted");
+    setRefresh(true);
+  }
+  console.log("accepted data", acceptedData);
+  function viewclick(e) {
+    setId(notifications[e].id);
+    setButtonPopup(true);
+    console.log(e);
+    setUsername(notifications[e].username);
+    console.log(notifications[e].username);
+    setFilename(notifications[e].filename);
+    console.log(notifications[e].filename);
+  }
+
+  useEffect(() => {
+    fetch("http://localhost:5000/getnewimports", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((resp) => resp.json())
+      .then((resp) => setNewimportdata(resp), console.log(newimportdata))
+      .catch((error) => console.log(error));
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/getnotifications", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((resp) => resp.json())
+      .then(
+        (resp) =>
+          setNotifications(resp.filter((item) => item.status == "pending")),
+        console.log("notifications", notifications)
       )
-      .catch(error => console.log(error))
+      .catch((error) => console.log(error));
+    setRefresh(false);
+  }, [refresh]);
 
-  },[])
- 
-  useEffect(()=>{
-      fetch('http://localhost:5000/getnotifications',{
-        'method' : 'GET',
-        headers:{
-          'Content-Type' : 'application/json'
-        }
-      })
-      .then(resp => resp.json())
-      .then(resp => setNotifications(resp),
-      console.log(notifications)
-      )
-      .catch(error => console.log(error))
-
-  },[])
-//   console.log("all notification")
-// console.log(notifications);
-// console.log("index notification")
-// console.log(notifications[0].filename);
-  function UpdateArticle(id,body){
-    return(
-        fetch(`http://localhost:5000/update/${id}` ,{
-            'method' : 'PUT',
-            headers : {
-                'Content-Type' : 'application/json'
-            },
-            body : JSON.stringify(body)
-        })
-        .then(resp => resp.json())
-    )
-}
+  //   console.log("all notification")
+  // console.log(notifications);
+  // console.log("index notification")
+  // console.log(notifications[0].filename);
+  function UpdateArticle(id, body) {
+    return fetch(`http://localhost:5000/update/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }).then((resp) => resp.json());
+  }
 
   return (
-    <div className="row" style={{ width: '80%', marginLeft: '10%', backgroundColor: 'white', height: '60vh' }}>
-
-    <div className="container" style={{backgroundColor:"#62306A",width:"80%",height:"80%",marginTop:"5%",marginBottom:"5%"}}>
-      <p id="notify">Notifications</p>
-        <div style={{height:"20vh"}}>
-        <div id="outerwrapper" style={{backgroundColor:"white"}}>
+    <div
+      className="row"
+      style={{
+        width: "80%",
+        marginLeft: "10%",
+        backgroundColor: "white",
+        height: "60vh",
+      }}
+    >
+      <div
+        className="container"
+        style={{
+          backgroundColor: "#62306A",
+          width: "80%",
+          height: "80%",
+          marginTop: "5%",
+          marginBottom: "5%",
+        }}
+      >
+        <p id="notify">Notifications</p>
+        <div style={{ height: "20vh" }}>
+          <div id="outerwrapper" style={{ backgroundColor: "white" }}>
             <div id="innerwrapper">
-            <table className="table">
-              <thead className='thead-dark ' style={{position:'sticky',top:'0px',background:'#62306A',color:'white'}} >
-                <tr >
-
-                  <th scope="col">User Id Number</th>
-                  <th scope="col">Username</th>
-                  <th scope="col">Filename</th>
-                  <th scope="col">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="bodytable">
-                {notifications.map((notifications,index) => (
-                  <tr id="bodytableelements">
-                    
+              <table className="table">
+                <thead
+                  className="thead-dark "
+                  style={{
+                    position: "sticky",
+                    top: "0px",
+                    background: "#62306A",
+                    color: "white",
+                  }}
+                >
+                  <tr>
+                    <th scope="col">User Id Number</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Filename</th>
+                    <th scope="col">Organization</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="bodytable">
+                  {notifications.map((notifications, index) => (
+                    <tr id="bodytableelements">
                       <td i="iddd">{notifications.id}</td>
                       <td id="username">{notifications.username}</td>
                       <td id="filename">{notifications.filename}</td>
-                      <td><button type="button" id="btn" onClick={()=>viewclick(index)} className="btn btn-link"style={{color: 'black'}}>View</button>
-         
-        </td>
-                    
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
+                      <td id="organization">{notifications.organization}</td>
+                      <td>
+                        <button
+                          type="button"
+                          id="btn"
+                          onClick={() => viewclick(index)}
+                          className="btn btn-link"
+                          style={{ color: "black" }}
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-      
-        </div>
-<Popup  trigger={buttonPopup} newimportdata={newimportdata} setTrigger={setButtonPopup} username={username} filename={filename}/>
-        {/* <div id="outerwrapper">
+          <Popup
+            trigger={buttonPopup}
+            newimportdata={newimportdata}
+            setTrigger={setButtonPopup}
+            id={id}
+            username={username}
+            filename={filename}
+          />
+          {/* <div id="outerwrapper">
             <div id="innerwrapper">
             <table className="table">
               <thead className='thead-dark ' style={{position:'sticky',top:'0px',background:'#62306A',color:'white'}} >
@@ -189,9 +262,7 @@ setButtonPopup(true)
         </div>
          */}
         </div>
+      </div>
     </div>
-     
-  </div>
-
-  )
+  );
 }
